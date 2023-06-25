@@ -8,15 +8,41 @@ public class CubicCoaster : MonoBehaviour
     public Transform[] waypoints = null;
     [SerializeField, MinValue(0.005f), MaxValue(0.5f)] private float resolution = 0.01f;
     [Space (8)]
-    [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 1f;
-    [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 1f;
+    [SerializeField, MustBeAssigned] private GameObject cart = null; 
+    [SerializeField] private Vector3 cartOffest = new Vector3 (0f, 1f, 0f); 
+    [SerializeField] private Vector3 cartRotationOffset = new Vector3 (0f, 0f, -90f);
+    [SerializeField, PositiveValueOnly] private float speed = 1f;
+    [Space (8)]
+    [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 0.2f;
+    [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 2f;
+
+    private float t = 0f;
 
     private MeshFilter meshFilter = null;
 
     private void Start()
     {
         meshFilter = GetComponent<MeshFilter>();
-        meshFilter.mesh = CreateBezierMesh(waypoints, width, height);
+        meshFilter.mesh = CreateBezierMesh(waypoints, height, width);
+    }
+
+    private void Update()
+    {
+        t += speed * Time.deltaTime;
+
+        if (t > 1f)
+            t -= 1f;
+
+        Vector3 p0 = waypoints[0].position;
+        Vector3 p1 = waypoints[1].position;
+        Vector3 p2 = waypoints[2].position;
+        Vector3 p3 = waypoints[3].position;
+
+        Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
+        Vector3 tangent = CalculateBezierTangent(t, p0, p1, p2, p3);
+
+        cart.transform.position = point + cart.transform.rotation * cartOffest;
+        cart.transform.rotation = Quaternion.LookRotation(tangent, Vector3.up) * Quaternion.Euler(cartRotationOffset);
     }
 
     private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)

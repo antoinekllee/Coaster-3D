@@ -8,15 +8,55 @@ public class Coaster : MonoBehaviour
     public Transform[] waypoints = null;
     [SerializeField, MinValue(0.005f), MaxValue(0.5f)] private float resolution = 0.01f;
     [Space(8)]
-    [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 1f;
-    [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 1f;
+    [SerializeField, MustBeAssigned] private GameObject cart = null; 
+    [SerializeField] private Vector3 cartOffest = new Vector3 (0f, 1f, 0f); 
+    [SerializeField] private Vector3 cartRotationOffset = new Vector3 (0f, 0f, -90f);
+    [SerializeField, PositiveValueOnly] private float speed = 1f;
+    [Space(8)]
+    [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 0.3f;
+    [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 2f;
+
+    private int currWaypointIndex = 0;
+    private float t = 0f;
 
     private MeshFilter meshFilter = null;
 
     private void Start()
     {
         meshFilter = GetComponent<MeshFilter>();
-        meshFilter.mesh = CreateBezierMesh(GetWaypointPositions(waypoints), width, height);
+        meshFilter.mesh = CreateBezierMesh(GetWaypointPositions(waypoints), height, width);
+    }
+
+    private void Update()
+    {
+        t += speed * Time.deltaTime;
+
+        if (t > 1f)
+        {
+            t -= 1f;
+            currWaypointIndex += 4;
+
+            if (currWaypointIndex >= waypoints.Length - 3)
+            {
+                currWaypointIndex = 0;
+                cart.transform.position = waypoints[0].position + cartOffest;
+                cart.transform.rotation = Quaternion.Euler(cartRotationOffset);
+            }
+        }
+
+        // Contains waypoints which all have shifted index positions such that currWaypointIndex is always index 0
+        Transform[] rotatedWaypoints = new Transform[waypoints.Length];
+
+        for (int i = 0; i < waypoints.Length; i++)
+        {
+            rotatedWaypoints[i] = waypoints[(i + currWaypointIndex) % waypoints.Length];
+        }
+
+        Vector3 point = DeCasteljau(GetWaypointPositions(rotatedWaypoints), t);
+        Vector3 tangent = CalculateBezierTangent(GetWaypointPositions(rotatedWaypoints), t);
+
+        cart.transform.position = point + cart.transform.rotation * cartOffest;
+        cart.transform.rotation = Quaternion.LookRotation(tangent, Vector3.up) * Quaternion.Euler(cartRotationOffset);
     }
 
     private Mesh CreateBezierMesh(Vector3[] controlPoints, float width, float height)
@@ -162,7 +202,7 @@ public class Coaster : MonoBehaviour
 
         return tangent.normalized;
     }
-    
+
     private Vector3[] GetWaypointPositions (Transform[] waypoints)
     {
         Vector3[] positions = new Vector3[waypoints.Length];

@@ -6,7 +6,7 @@ using MyBox;
 public class Coaster : MonoBehaviour
 {
     public Transform[] waypoints = null;
-    [SerializeField, PositiveValueOnly, MaxValue(0.5f)] private float resolution = 0.01f;
+    [SerializeField, MinValue(0.005f), MaxValue(0.5f)] private float resolution = 0.01f;
     [Space (8)]
     [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 1f;
     [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 1f;
@@ -41,19 +41,19 @@ public class Coaster : MonoBehaviour
                 Vector3 normal = Vector3.Cross(tangent, Vector3.up);
 
                 int leftDown = vertices.Count;
-                vertices.Add(point + normal * width / 2); 
+                vertices.Add(point + normal * width - Vector3.up * (height / 2f)); 
                 normals.Add(-normal); 
 
                 int rightDown = vertices.Count;
-                vertices.Add(point - normal * width / 2); 
+                vertices.Add(point - normal * width - Vector3.up * (height / 2f)); 
                 normals.Add(-normal); 
 
                 int leftUp = vertices.Count;
-                vertices.Add(point + normal * width / 2 + Vector3.up * height); 
+                vertices.Add(point + normal * width + Vector3.up * (height / 2f)); 
                 normals.Add(normal); 
 
                 int rightUp = vertices.Count;
-                vertices.Add(point - normal * width / 2 + Vector3.up * height); 
+                vertices.Add(point - normal * width + Vector3.up * (height / 2f)); 
                 normals.Add(normal); 
 
                 if(prevLeftDown != -1)

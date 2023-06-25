@@ -10,9 +10,6 @@ public class CameraController : MonoBehaviour
     [SerializeField, PositiveValueOnly] private float minZoomDistance = 5f;
     [SerializeField, PositiveValueOnly] private float maxZoomDistance = 50f;
 
-    [SerializeField, PositiveValueOnly] private float positionDamping = 2.5f;
-    [SerializeField, PositiveValueOnly] private float rotationDamping = 5f;
-
     private Vector3 lastPanPosition;
     private bool isPanning;
 

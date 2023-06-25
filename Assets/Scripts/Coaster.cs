@@ -7,7 +7,7 @@ public class Coaster : MonoBehaviour
 {
     public Transform[] waypoints = null;
     [SerializeField, MinValue(0.005f), MaxValue(0.5f)] private float resolution = 0.01f;
-    [Space (8)]
+    [Space(8)]
     [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 1f;
     [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 1f;
 
@@ -16,10 +16,10 @@ public class Coaster : MonoBehaviour
     private void Start()
     {
         meshFilter = GetComponent<MeshFilter>();
-        meshFilter.mesh = CreateBezierMesh(waypoints, width, height);
+        meshFilter.mesh = CreateBezierMesh(GetWaypointPositions(waypoints), width, height);
     }
 
-    private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)
+    private Mesh CreateBezierMesh(Vector3[] controlPoints, float width, float height)
     {
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
@@ -30,105 +30,102 @@ public class Coaster : MonoBehaviour
         int prevLeftUp = -1;
         int prevRightUp = -1;
 
-        for (int i = 0; i < controlPoints.Length - 3; i += 4)
+        for (float t = 0; t <= 1; t += resolution)
         {
-            for (float t = 0; t <= 1; t += resolution)
+            Vector3 point = DeCasteljau(controlPoints, t);
+
+            Vector3 tangent = CalculateBezierTangent(controlPoints, t).normalized;
+
+            Vector3 normal = Vector3.Cross(tangent, Vector3.up);
+
+            int leftDown = vertices.Count;
+            vertices.Add(point + normal * width - Vector3.up * (height / 2f)); 
+            normals.Add(-normal); 
+
+            int rightDown = vertices.Count;
+            vertices.Add(point - normal * width - Vector3.up * (height / 2f)); 
+            normals.Add(-normal); 
+
+            int leftUp = vertices.Count;
+            vertices.Add(point + normal * width + Vector3.up * (height / 2f)); 
+            normals.Add(normal); 
+
+            int rightUp = vertices.Count;
+            vertices.Add(point - normal * width + Vector3.up * (height / 2f)); 
+            normals.Add(normal); 
+
+            if(prevLeftDown != -1)
             {
-                Vector3 point = CalculateBezierPoint(t, controlPoints[i].position, controlPoints[i + 1].position, controlPoints[i + 2].position, controlPoints[i + 3].position);
+                // Bottom
+                triangles.Add(prevLeftDown);
+                triangles.Add(rightDown);
+                triangles.Add(leftDown);
 
-                Vector3 tangent = CalculateBezierTangent(t, controlPoints[i].position, controlPoints[i + 1].position, controlPoints[i + 2].position, controlPoints[i + 3].position).normalized;
+                triangles.Add(prevLeftDown);
+                triangles.Add(prevRightDown);
+                triangles.Add(rightDown);
 
-                Vector3 normal = Vector3.Cross(tangent, Vector3.up);
+                // Top
+                triangles.Add(prevLeftUp);
+                triangles.Add(leftUp);
+                triangles.Add(rightUp);
 
-                int leftDown = vertices.Count;
-                vertices.Add(point + normal * width - Vector3.up * (height / 2f)); 
-                normals.Add(-normal); 
+                triangles.Add(prevLeftUp);
+                triangles.Add(rightUp);
+                triangles.Add(prevRightUp);
 
-                int rightDown = vertices.Count;
-                vertices.Add(point - normal * width - Vector3.up * (height / 2f)); 
-                normals.Add(-normal); 
+                // Sides
+                Vector3 sideNormal = Vector3.Cross(Vector3.up, tangent); 
 
-                int leftUp = vertices.Count;
-                vertices.Add(point + normal * width + Vector3.up * (height / 2f)); 
-                normals.Add(normal); 
+                triangles.Add(prevRightDown);
+                triangles.Add(rightUp);
+                triangles.Add(rightDown);
+                normals[rightDown] = sideNormal; 
+                normals[rightUp] = sideNormal; 
 
-                int rightUp = vertices.Count;
-                vertices.Add(point - normal * width + Vector3.up * (height / 2f)); 
-                normals.Add(normal); 
+                triangles.Add(prevRightDown);
+                triangles.Add(prevRightUp);
+                triangles.Add(rightUp);
+                normals[prevRightDown] = sideNormal; 
+                normals[prevRightUp] = sideNormal; 
 
-                if(prevLeftDown != -1)
-                {
-                    // Bottom
-                    triangles.Add(prevLeftDown);
-                    triangles.Add(rightDown);
-                    triangles.Add(leftDown);
+                triangles.Add(prevLeftDown);
+                triangles.Add(leftDown);
+                triangles.Add(leftUp);
+                normals[leftDown] = -sideNormal; 
+                normals[leftUp] = -sideNormal; 
 
-                    triangles.Add(prevLeftDown);
-                    triangles.Add(prevRightDown);
-                    triangles.Add(rightDown);
-
-                    // Top
-                    triangles.Add(prevLeftUp);
-                    triangles.Add(leftUp);
-                    triangles.Add(rightUp);
-
-                    triangles.Add(prevLeftUp);
-                    triangles.Add(rightUp);
-                    triangles.Add(prevRightUp);
-
-                    // Sides
-                    Vector3 sideNormal = Vector3.Cross(Vector3.up, tangent); 
-
-                    triangles.Add(prevRightDown);
-                    triangles.Add(rightUp);
-                    triangles.Add(rightDown);
-                    normals[rightDown] = sideNormal; 
-                    normals[rightUp] = sideNormal; 
-
-                    triangles.Add(prevRightDown);
-                    triangles.Add(prevRightUp);
-                    triangles.Add(rightUp);
-                    normals[prevRightDown] = sideNormal; 
-                    normals[prevRightUp] = sideNormal; 
-
-                    triangles.Add(prevLeftDown);
-                    triangles.Add(leftDown);
-                    triangles.Add(leftUp);
-                    normals[leftDown] = -sideNormal; 
-                    normals[leftUp] = -sideNormal; 
-
-                    triangles.Add(prevLeftDown);
-                    triangles.Add(leftUp);
-                    triangles.Add(prevLeftUp);
-                    normals[prevLeftDown] = -sideNormal; 
-                    normals[prevLeftUp] = -sideNormal; 
-                }
-
-                prevLeftDown = leftDown;
-                prevRightDown = rightDown;
-                prevLeftUp = leftUp;
-                prevRightUp = rightUp;
+                triangles.Add(prevLeftDown);
+                triangles.Add(leftUp);
+                triangles.Add(prevLeftUp);
+                normals[prevLeftDown] = -sideNormal; 
+                normals[prevLeftUp] = -sideNormal; 
             }
 
-            // Close the start of the track
-            triangles.Add(0);
-            triangles.Add(2);
-            triangles.Add(1);
-
-            triangles.Add(1);
-            triangles.Add(2);
-            triangles.Add(3);
-
-            // Close the end of the track
-            int vCount = vertices.Count;
-            triangles.Add(vCount - 4);
-            triangles.Add(vCount - 3);
-            triangles.Add(vCount - 2);
-
-            triangles.Add(vCount - 2);
-            triangles.Add(vCount - 3);
-            triangles.Add(vCount - 1);
+            prevLeftDown = leftDown;
+            prevRightDown = rightDown;
+            prevLeftUp = leftUp;
+            prevRightUp = rightUp;
         }
+
+        // Close the start of the track
+        triangles.Add(0);
+        triangles.Add(2);
+        triangles.Add(1);
+
+        triangles.Add(1);
+        triangles.Add(2);
+        triangles.Add(3);
+
+        // Close the end of the track
+        int vCount = vertices.Count;
+        triangles.Add(vCount - 4);
+        triangles.Add(vCount - 3);
+        triangles.Add(vCount - 2);
+
+        triangles.Add(vCount - 2);
+        triangles.Add(vCount - 3);
+        triangles.Add(vCount - 1);
 
         // Create the mesh
         Mesh mesh = new Mesh();
@@ -139,55 +136,53 @@ public class Coaster : MonoBehaviour
         return mesh;
     }
 
-    private Vector3 CalculateBezierPoint(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+    private Vector3 DeCasteljau(Vector3[] controlPoints, float t)
     {
-        float tt = t * t;
-        float ttt = tt * t;
+        if (controlPoints.Length == 1) return controlPoints[0];
 
-        // Bernstein polynomial form
-        Vector3 p = Vector3.zero; 
-        p += (-ttt + 3 * tt - 3 * t + 1) * p0; // (-t^3 + 3t^2 - 3t + 1) * p0
-        p += (3 * ttt - 6 * tt + 3 * t) * p1; // (3t^3 - 6t^2 + 3t) * p1
-        p += (-3 * ttt + 3 * tt) * p2; // (-3t^3 + 3t^2) * p2
-        p += ttt * p3; // t^3 * p3
+        Vector3[] newPoints = new Vector3[controlPoints.Length - 1];
+        for (int i = 0; i < newPoints.Length; i++)
+        {
+            newPoints[i] = Vector3.Lerp(controlPoints[i], controlPoints[i + 1], t);
+        }
 
-        return p;
+        return DeCasteljau(newPoints, t);
     }
 
-    private Vector3 CalculateBezierTangent(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+    private Vector3 CalculateBezierTangent(Vector3[] controlPoints, float t)
     {
-        float tt = t * t;
+        int n = controlPoints.Length - 1;  // The degree of the bezier curve
+        Vector3 tangent = Vector3.zero;
 
-        // Bernstein polynomial form for the derivative
-        Vector3 p = Vector3.zero;
-        p += (-3 * tt + 6 * t - 3) * p0; // (-3t^2 + 6t - 3) * p0
-        p += (9 * tt - 12 * t + 3) * p1; // (9t^2 - 12t + 3) * p1
-        p += (-9 * tt + 6 * t) * p2; // (-9t^2 + 6t) * p2
-        p += 3 * tt * p3; // 3t^2 * p3
+        for (int i = 0; i < n; i++)
+        {
+            Vector3 term = n * (controlPoints[i + 1] - controlPoints[i]) * Mathf.Pow(1 - t, n - i - 1) * Mathf.Pow(t, i);
+            tangent += term;
+        }
 
-        return p.normalized;
+        return tangent.normalized;
+    }
+    
+    private Vector3[] GetWaypointPositions (Transform[] waypoints)
+    {
+        Vector3[] positions = new Vector3[waypoints.Length];
+        for (int i = 0; i < waypoints.Length; i++)
+            positions[i] = waypoints[i].position;
+        return positions;
     }
 
-    // Visualise with gizmos
+    // Visualize with gizmos
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.gray; 
+        Gizmos.color = Color.gray;
 
         if (waypoints != null)
         {
-            for (int i = 0; i < waypoints.Length - 3; i += 4)
+            for (int i = 0; i < waypoints.Length - 1; i += 1)
             {
-                Vector3 p0 = waypoints[i].position;
-                Vector3 p1 = waypoints[i + 1].position;
-                Vector3 p2 = waypoints[i + 2].position;
-                Vector3 p3 = waypoints[i + 3].position;
-
-                Gizmos.DrawLine(p0, p1);
-                Gizmos.DrawLine(p2, p3);
-
                 for (float t = 0; t <= 1; t += resolution)
                 {
-                    Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
+                    Vector3 point = DeCasteljau(GetWaypointPositions(waypoints), t);
                     Gizmos.DrawSphere(point, 0.1f);
                 }
             }

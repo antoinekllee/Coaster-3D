@@ -1,15 +1,17 @@
 using UnityEngine;
+using MyBox;
+using DG.Tweening;
 
 public class CameraController : MonoBehaviour
 {
-    public float panSpeed = 20f;
-    public float rotateSpeed = 50f;
-    public float zoomSpeed = 1000f;
-    public float minZoomDistance = 5f;
-    public float maxZoomDistance = 50f;
+    [SerializeField, PositiveValueOnly] private float panSpeed = 20f;
+    [SerializeField, PositiveValueOnly] private float rotateSpeed = 50f;
+    [SerializeField, PositiveValueOnly] private float zoomSpeed = 1000f;
+    [SerializeField, PositiveValueOnly] private float minZoomDistance = 5f;
+    [SerializeField, PositiveValueOnly] private float maxZoomDistance = 50f;
 
-    public float positionDamping = 2.5f;
-    public float rotationDamping = 5f;
+    [SerializeField, PositiveValueOnly] private float positionDamping = 2.5f;
+    [SerializeField, PositiveValueOnly] private float rotationDamping = 5f;
 
     private Vector3 lastPanPosition;
     private bool isPanning;
@@ -17,8 +19,9 @@ public class CameraController : MonoBehaviour
     private Vector3 pivotPoint;
     private bool isRotating;
 
-    public Coaster coaster;
-    public Transform[] waypoints;
+    [SerializeField, MustBeAssigned] private Coaster coaster = null;
+    [SerializeField, ReadOnly] Transform[] waypoints;
+    private bool isResetting = false; 
 
     private void Start()
     {
@@ -28,6 +31,14 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
+        if (isResetting)
+        {
+            isPanning = false;
+            isRotating = false;
+
+            return;
+        }
+
         if (Input.GetMouseButtonDown(0))
         {
             BeginPan();
@@ -146,7 +157,10 @@ public class CameraController : MonoBehaviour
         float distance = bounds.extents.magnitude / cameraView; 
         desiredPosition -= distance * transform.forward; 
 
-        // Set camera position and rotation
-        transform.position = desiredPosition;
+        // Smoothly move camera to desired position using DOTween
+        isResetting = true;
+        transform.DOMove(desiredPosition, 0.5f)
+            .SetEase(Ease.InOutQuad)
+            .OnComplete(() => isResetting = false);
     }
 }

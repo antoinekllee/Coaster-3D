@@ -1,13 +1,17 @@
 using System.Collections.Generic;
 using UnityEngine;
+using MyBox; 
 
+[RequireComponent(typeof(MeshFilter))]
 public class Coaster : MonoBehaviour
 {
-    public Transform[] waypoints;
-    public float width = 1f;
-    public float height = 1f;
+    public Transform[] waypoints = null;
+    [SerializeField, PositiveValueOnly, MaxValue(0.5f)] private float resolution = 0.01f;
+    [Space (8)]
+    [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 1f;
+    [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 1f;
 
-    private MeshFilter meshFilter;
+    private MeshFilter meshFilter = null;
 
     private void Start()
     {
@@ -28,7 +32,7 @@ public class Coaster : MonoBehaviour
 
         for (int i = 0; i < controlPoints.Length - 3; i += 4)
         {
-            for (float t = 0; t <= 1; t += 0.01f)
+            for (float t = 0; t <= 1; t += resolution)
             {
                 Vector3 point = CalculateBezierPoint(t, controlPoints[i].position, controlPoints[i + 1].position, controlPoints[i + 2].position, controlPoints[i + 3].position);
 
@@ -36,25 +40,22 @@ public class Coaster : MonoBehaviour
 
                 Vector3 normal = Vector3.Cross(tangent, Vector3.up);
 
-                // Create vertices for the bottom rectangle
                 int leftDown = vertices.Count;
-                vertices.Add(point + normal * width / 2); // Bottom-left
-                normals.Add(-normal); // Normal for bottom-left
+                vertices.Add(point + normal * width / 2); 
+                normals.Add(-normal); 
 
                 int rightDown = vertices.Count;
-                vertices.Add(point - normal * width / 2); // Bottom-right
-                normals.Add(-normal); // Normal for bottom-right
+                vertices.Add(point - normal * width / 2); 
+                normals.Add(-normal); 
 
-                // Create vertices for the top rectangle
                 int leftUp = vertices.Count;
-                vertices.Add(point + normal * width / 2 + Vector3.up * height); // Top-left
-                normals.Add(normal); // Normal for top-left
+                vertices.Add(point + normal * width / 2 + Vector3.up * height); 
+                normals.Add(normal); 
 
                 int rightUp = vertices.Count;
-                vertices.Add(point - normal * width / 2 + Vector3.up * height); // Top-right
-                normals.Add(normal); // Normal for top-right
+                vertices.Add(point - normal * width / 2 + Vector3.up * height); 
+                normals.Add(normal); 
 
-                // Link the triangles with the previous segment
                 if(prevLeftDown != -1)
                 {
                     // Bottom
@@ -76,31 +77,31 @@ public class Coaster : MonoBehaviour
                     triangles.Add(prevRightUp);
 
                     // Sides
-                    Vector3 sideNormal = Vector3.Cross(Vector3.up, tangent); // Normal for sides
+                    Vector3 sideNormal = Vector3.Cross(Vector3.up, tangent); 
 
                     triangles.Add(prevRightDown);
                     triangles.Add(rightUp);
                     triangles.Add(rightDown);
-                    normals[rightDown] = sideNormal; // Normal for right side bottom
-                    normals[rightUp] = sideNormal; // Normal for right side top
+                    normals[rightDown] = sideNormal; 
+                    normals[rightUp] = sideNormal; 
 
                     triangles.Add(prevRightDown);
                     triangles.Add(prevRightUp);
                     triangles.Add(rightUp);
-                    normals[prevRightDown] = sideNormal; // Normal for right side bottom
-                    normals[prevRightUp] = sideNormal; // Normal for right side top
+                    normals[prevRightDown] = sideNormal; 
+                    normals[prevRightUp] = sideNormal; 
 
                     triangles.Add(prevLeftDown);
                     triangles.Add(leftDown);
                     triangles.Add(leftUp);
-                    normals[leftDown] = -sideNormal; // Normal for left side bottom
-                    normals[leftUp] = -sideNormal; // Normal for left side top
+                    normals[leftDown] = -sideNormal; 
+                    normals[leftUp] = -sideNormal; 
 
                     triangles.Add(prevLeftDown);
                     triangles.Add(leftUp);
                     triangles.Add(prevLeftUp);
-                    normals[prevLeftDown] = -sideNormal; // Normal for left side bottom
-                    normals[prevLeftUp] = -sideNormal; // Normal for left side top
+                    normals[prevLeftDown] = -sideNormal; 
+                    normals[prevLeftUp] = -sideNormal; 
                 }
 
                 prevLeftDown = leftDown;
@@ -140,15 +141,14 @@ public class Coaster : MonoBehaviour
 
     private Vector3 CalculateBezierPoint(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
     {
-        float u = 1 - t;
         float tt = t * t;
-        float uu = u * u;
-        float uuu = uu * u;
         float ttt = tt * t;
 
-        Vector3 p = uuu * p0; // (1-t) ^ 3  * p0
-        p += 3 * uu * t * p1; // 3 * (1 - t)^2 * t * p1
-        p += 3 * u * tt * p2; // 3 * (1 - t) * t^2 * p2
+        // Bernstein polynomial form
+        Vector3 p = Vector3.zero; 
+        p += (-ttt + 3 * tt - 3 * t + 1) * p0; // (-t^3 + 3t^2 - 3t + 1) * p0
+        p += (3 * ttt - 6 * tt + 3 * t) * p1; // (3t^3 - 6t^2 + 3t) * p1
+        p += (-3 * ttt + 3 * tt) * p2; // (-3t^3 + 3t^2) * p2
         p += ttt * p3; // t^3 * p3
 
         return p;
@@ -156,15 +156,41 @@ public class Coaster : MonoBehaviour
 
     private Vector3 CalculateBezierTangent(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
     {
-        float u = 1 - t;
         float tt = t * t;
-        float uu = u * u;
 
-        Vector3 p = -3 * uu * p0; // -3 * (1-t)^2 * p0
-        p += 3 * (3 * tt - 4 * t + 1) * p1; // 3 * (3t^2 - 4t + 1) * p1
-        p += 3 * (2 * t - 3 * tt) * p2; // 3 * (2t - 3t^2) * p2
+        // Bernstein polynomial form for the derivative
+        Vector3 p = Vector3.zero;
+        p += (-3 * tt + 6 * t - 3) * p0; // (-3t^2 + 6t - 3) * p0
+        p += (9 * tt - 12 * t + 3) * p1; // (9t^2 - 12t + 3) * p1
+        p += (-9 * tt + 6 * t) * p2; // (-9t^2 + 6t) * p2
         p += 3 * tt * p3; // 3t^2 * p3
 
         return p.normalized;
+    }
+
+    // Visualise with gizmos
+    private void OnDrawGizmos()
+    {
+        Gizmos.color = Color.gray; 
+
+        if (waypoints != null)
+        {
+            for (int i = 0; i < waypoints.Length - 3; i += 4)
+            {
+                Vector3 p0 = waypoints[i].position;
+                Vector3 p1 = waypoints[i + 1].position;
+                Vector3 p2 = waypoints[i + 2].position;
+                Vector3 p3 = waypoints[i + 3].position;
+
+                Gizmos.DrawLine(p0, p1);
+                Gizmos.DrawLine(p2, p3);
+
+                for (float t = 0; t <= 1; t += resolution)
+                {
+                    Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
+                    Gizmos.DrawSphere(point, 0.1f);
+                }
+            }
+        }
     }
 }

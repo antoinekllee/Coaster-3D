@@ -745,6 +745,7 @@ MonoBehaviour:
   - {fileID: 1300830518}
   - {fileID: 1736654358}
   - {fileID: 139160545}
+  resolution: 0.01
   width: 0.3
   height: 1
 --- !u!33 &1259249784
@@ -895,7 +896,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1300830514}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 9.6, y: 2.53, z: 0}
+  m_LocalPosition: {x: 9.6, y: 1.06, z: 4.56}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1000,7 +1001,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1736654354}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -9.75, y: 0.02, z: -2.11}
+  m_LocalPosition: {x: -1.01, y: -1.5, z: -2.11}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []

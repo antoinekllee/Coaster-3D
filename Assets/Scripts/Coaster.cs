@@ -69,7 +69,7 @@ public class Coaster : MonoBehaviour
         int prevRightDown = -1;
         int prevLeftUp = -1;
         int prevRightUp = -1;
-
+    
         for (float t = 0; t <= 1; t += resolution)
         {
             Vector3 point = DeCasteljau(controlPoints, t);
@@ -191,7 +191,7 @@ public class Coaster : MonoBehaviour
 
     private Vector3 CalculateBezierTangent(Vector3[] controlPoints, float t)
     {
-        int n = controlPoints.Length - 1;  // The degree of the bezier curve
+        int n = controlPoints.Length - 1; // The degree of the bezier curve
         Vector3 tangent = Vector3.zero;
 
         for (int i = 0; i < n; i++)

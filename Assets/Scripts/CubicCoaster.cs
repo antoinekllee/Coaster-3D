@@ -42,7 +42,7 @@ public class CubicCoaster : MonoBehaviour
         Vector3 tangent = CalculateBezierTangent(t, p0, p1, p2, p3);
 
         cart.transform.position = point + cart.transform.rotation * cartOffest;
-        cart.transform.rotation = Quaternion.LookRotation(tangent, Vector3.up) * Quaternion.Euler(cartRotationOffset);
+        cart.transform.rotation = Quaternion.LookRotation(tangent, Vector3.right) * Quaternion.Euler(cartRotationOffset);
     }
 
     private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)
@@ -64,22 +64,22 @@ public class CubicCoaster : MonoBehaviour
 
                 Vector3 tangent = CalculateBezierTangent(t, controlPoints[i].position, controlPoints[i + 1].position, controlPoints[i + 2].position, controlPoints[i + 3].position).normalized;
 
-                Vector3 normal = Vector3.Cross(tangent, Vector3.up);
+                Vector3 normal = Vector3.Cross(tangent, Vector3.right);
 
                 int leftDown = vertices.Count;
-                vertices.Add(point + normal * width - Vector3.up * (height / 2f)); 
+                vertices.Add(point + normal * width - Vector3.right * (height / 2f)); 
                 normals.Add(-normal); 
 
                 int rightDown = vertices.Count;
-                vertices.Add(point - normal * width - Vector3.up * (height / 2f)); 
+                vertices.Add(point - normal * width - Vector3.right * (height / 2f)); 
                 normals.Add(-normal); 
 
                 int leftUp = vertices.Count;
-                vertices.Add(point + normal * width + Vector3.up * (height / 2f)); 
+                vertices.Add(point + normal * width + Vector3.right * (height / 2f)); 
                 normals.Add(normal); 
 
                 int rightUp = vertices.Count;
-                vertices.Add(point - normal * width + Vector3.up * (height / 2f)); 
+                vertices.Add(point - normal * width + Vector3.right * (height / 2f)); 
                 normals.Add(normal); 
 
                 if(prevLeftDown != -1)
@@ -103,7 +103,7 @@ public class CubicCoaster : MonoBehaviour
                     triangles.Add(prevRightUp);
 
                     // Sides
-                    Vector3 sideNormal = Vector3.Cross(Vector3.up, tangent); 
+                    Vector3 sideNormal = Vector3.Cross(Vector3.right, tangent); 
 
                     triangles.Add(prevRightDown);
                     triangles.Add(rightUp);

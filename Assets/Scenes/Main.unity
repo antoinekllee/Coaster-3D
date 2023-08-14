@@ -2141,7 +2141,7 @@ MonoBehaviour:
   - {fileID: 639712894}
   resolution: 0.01
   cart: {fileID: 1744827653}
-  cartOffest: {x: 0, y: 1, z: 0}
+  cartOffest: {x: 0, y: 0.9, z: 0}
   cartRotationOffset: {x: 0, y: 0, z: 0}
   speed: 0.2
   height: 0.3
@@ -3132,7 +3132,7 @@ MonoBehaviour:
   - {fileID: 139160545}
   resolution: 0.01
   cart: {fileID: 1744827653}
-  cartOffest: {x: 0, y: 1, z: 0}
+  cartOffest: {x: 0, y: 0.88, z: 0}
   cartRotationOffset: {x: 0, y: 0, z: -90}
   speed: 0.5
   height: 0.3

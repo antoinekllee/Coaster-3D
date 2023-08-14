@@ -16,13 +16,16 @@ public class CameraController : MonoBehaviour
     private Vector3 pivotPoint;
     private bool isRotating;
 
-    [SerializeField, MustBeAssigned] private Coaster coaster = null;
+    [SerializeField, MustBeAssigned] private Transform waypointsParent = null; 
     [SerializeField, ReadOnly] Transform[] waypoints;
     private bool isResetting = false; 
 
     private void Start()
     {
-        waypoints = coaster.waypoints;
+        waypoints = new Transform[waypointsParent.childCount];
+        for (int i = 0; i < waypointsParent.childCount; i++)
+            waypoints[i] = waypointsParent.GetChild(i);
+        
         Recenter(waypoints);
     }
 

@@ -3,7 +3,7 @@ using UnityEngine;
 using MyBox; 
 
 [RequireComponent(typeof(MeshFilter))]
-public class CubicCoaster : MonoBehaviour
+public class BernsteinCoaster : MonoBehaviour
 {
     public Transform[] waypoints = null;
     [SerializeField, MinValue(0.005f), MaxValue(0.5f)] private float resolution = 0.01f;

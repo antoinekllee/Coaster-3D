@@ -956,7 +956,7 @@ MonoBehaviour:
   zoomSpeed: 1000
   minZoomDistance: 1
   maxZoomDistance: 200
-  coaster: {fileID: 1259249783}
+  waypointsParent: {fileID: 176007155}
   waypoints: []
 --- !u!1 &410087039
 GameObject:

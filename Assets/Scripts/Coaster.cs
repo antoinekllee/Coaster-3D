@@ -44,19 +44,11 @@ public class Coaster : MonoBehaviour
             }
         }
 
-        // Contains waypoints which all have shifted index positions such that currWaypointIndex is always index 0
-        Transform[] rotatedWaypoints = new Transform[waypoints.Length];
+        Vector3 point = DeCasteljau(GetWaypointPositions(waypoints), t);
+        Vector3 tangent = CalculateBezierTangent(GetWaypointPositions(waypoints), t).normalized;
 
-        for (int i = 0; i < waypoints.Length; i++)
-        {
-            rotatedWaypoints[i] = waypoints[(i + currWaypointIndex) % waypoints.Length];
-        }
-
-        Vector3 point = DeCasteljau(GetWaypointPositions(rotatedWaypoints), t);
-        Vector3 tangent = CalculateBezierTangent(GetWaypointPositions(rotatedWaypoints), t);
-
+        cart.transform.rotation = Quaternion.Euler(cartRotationOffset) * Quaternion.LookRotation(tangent, Vector3.up);
         cart.transform.position = point + cart.transform.rotation * cartOffest;
-        cart.transform.rotation = Quaternion.LookRotation(tangent, Vector3.up) * Quaternion.Euler(cartRotationOffset);
     }
 
     private Mesh CreateBezierMesh(Vector3[] controlPoints, float width, float height)
@@ -76,22 +68,22 @@ public class Coaster : MonoBehaviour
 
             Vector3 tangent = CalculateBezierTangent(controlPoints, t).normalized;
 
-            Vector3 normal = Vector3.Cross(tangent, Vector3.up);
+            Vector3 normal = Vector3.Cross(tangent, Vector3.right);
 
             int leftDown = vertices.Count;
-            vertices.Add(point + normal * width - Vector3.up * (height / 2f)); 
+            vertices.Add(point + normal * width - Vector3.right * (height / 2f)); 
             normals.Add(-normal); 
 
             int rightDown = vertices.Count;
-            vertices.Add(point - normal * width - Vector3.up * (height / 2f)); 
+            vertices.Add(point - normal * width - Vector3.right * (height / 2f)); 
             normals.Add(-normal); 
 
             int leftUp = vertices.Count;
-            vertices.Add(point + normal * width + Vector3.up * (height / 2f)); 
+            vertices.Add(point + normal * width + Vector3.right * (height / 2f)); 
             normals.Add(normal); 
 
             int rightUp = vertices.Count;
-            vertices.Add(point - normal * width + Vector3.up * (height / 2f)); 
+            vertices.Add(point - normal * width + Vector3.right * (height / 2f)); 
             normals.Add(normal); 
 
             if(prevLeftDown != -1)
@@ -115,7 +107,7 @@ public class Coaster : MonoBehaviour
                 triangles.Add(prevRightUp);
 
                 // Sides
-                Vector3 sideNormal = Vector3.Cross(Vector3.up, tangent); 
+                Vector3 sideNormal = Vector3.Cross(Vector3.right, tangent); 
 
                 triangles.Add(prevRightDown);
                 triangles.Add(rightUp);

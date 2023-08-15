@@ -20,8 +20,15 @@ public class BernsteinCoaster : MonoBehaviour
 
     private MeshFilter meshFilter = null;
 
+    private int numberOfCurves;
+
     private void Start()
     {
+        numberOfCurves = waypoints.Length / 3; // Every 4 points create a single cubic bezier curve
+        if (numberOfCurves > 0 && (waypoints.Length - (3 * numberOfCurves)) != 1)
+        {
+            Debug.LogWarning("The number of waypoints doesn't fit perfectly into full cubic bezier curves. Excess points will be ignored.");
+        }
         meshFilter = GetComponent<MeshFilter>();
         meshFilter.mesh = CreateBezierMesh(waypoints, height, width);
     }
@@ -30,16 +37,19 @@ public class BernsteinCoaster : MonoBehaviour
     {
         t += speed * Time.deltaTime;
 
-        if (t > 1f)
-            t -= 1f;
+        if (t > numberOfCurves)
+            t -= numberOfCurves;
 
-        Vector3 p0 = waypoints[0].position;
-        Vector3 p1 = waypoints[1].position;
-        Vector3 p2 = waypoints[2].position;
-        Vector3 p3 = waypoints[3].position;
+        int curveIndex = Mathf.FloorToInt(t);
+        Vector3 p0 = waypoints[curveIndex * 3].position;
+        Vector3 p1 = waypoints[curveIndex * 3 + 1].position;
+        Vector3 p2 = waypoints[curveIndex * 3 + 2].position;
+        Vector3 p3 = waypoints[Mathf.Min(curveIndex * 3 + 3, waypoints.Length - 1)].position; // Making sure we don't exceed the array
 
-        Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
-        Vector3 tangent = CalculateBezierTangent(t, p0, p1, p2, p3);
+        float localT = t - curveIndex; // Normalize t to [0, 1] for the current curve
+
+        Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
+        Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
 
         cart.transform.position = point + cart.transform.rotation * cartOffest;
         cart.transform.rotation = Quaternion.LookRotation(tangent, Vector3.right) * Quaternion.Euler(cartRotationOffset);
@@ -49,21 +59,24 @@ public class BernsteinCoaster : MonoBehaviour
     {
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
-        List<Vector3> normals = new List<Vector3>();  // The list to store the calculated normals
+        List<Vector3> normals = new List<Vector3>();
 
         int prevLeftDown = -1;
         int prevRightDown = -1;
         int prevLeftUp = -1;
         int prevRightUp = -1;
 
-        for (int i = 0; i < controlPoints.Length - 3; i += 4)
+        for (int i = 0; i < controlPoints.Length - 3; i += 3)
         {
+            Vector3 p0 = controlPoints[i].position;
+            Vector3 p1 = controlPoints[i + 1].position;
+            Vector3 p2 = controlPoints[i + 2].position;
+            Vector3 p3 = controlPoints[i + 3].position;
+
             for (float t = 0; t <= 1; t += resolution)
             {
-                Vector3 point = CalculateBezierPoint(t, controlPoints[i].position, controlPoints[i + 1].position, controlPoints[i + 2].position, controlPoints[i + 3].position);
-
-                Vector3 tangent = CalculateBezierTangent(t, controlPoints[i].position, controlPoints[i + 1].position, controlPoints[i + 2].position, controlPoints[i + 3].position).normalized;
-
+                Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
+                Vector3 tangent = CalculateBezierTangent(t, p0, p1, p2, p3).normalized;
                 Vector3 normal = Vector3.Cross(tangent, Vector3.right);
 
                 int leftDown = vertices.Count;
@@ -197,16 +210,18 @@ public class BernsteinCoaster : MonoBehaviour
     // Visualise with gizmos
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.gray; 
+        Gizmos.color = Color.gray;
 
         if (waypoints != null)
         {
-            for (int i = 0; i < waypoints.Length - 3; i += 4)
+            int completeCurves = waypoints.Length / 4;
+
+            for (int i = 0; i < completeCurves; i++)
             {
-                Vector3 p0 = waypoints[i].position;
-                Vector3 p1 = waypoints[i + 1].position;
-                Vector3 p2 = waypoints[i + 2].position;
-                Vector3 p3 = waypoints[i + 3].position;
+                Vector3 p0 = waypoints[i * 3].position;
+                Vector3 p1 = waypoints[i * 3 + 1].position;
+                Vector3 p2 = waypoints[i * 3 + 2].position;
+                Vector3 p3 = waypoints[i * 3 + 3].position;
 
                 Gizmos.DrawLine(p0, p1);
                 Gizmos.DrawLine(p2, p3);
@@ -216,6 +231,21 @@ public class BernsteinCoaster : MonoBehaviour
                     Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
                     Gizmos.DrawSphere(point, 0.1f);
                 }
+            }
+
+            // Draw lines and spheres for the remaining points (if they exist but don't form a complete curve)
+            int remainingPoints = waypoints.Length - (completeCurves * 4);
+            for (int i = 0; i < remainingPoints - 1; i++)
+            {
+                Vector3 pStart = waypoints[completeCurves * 4 + i].position;
+                Vector3 pEnd = waypoints[completeCurves * 4 + i + 1].position;
+                Gizmos.DrawLine(pStart, pEnd);
+                Gizmos.DrawSphere(pStart, 0.1f);
+            }
+
+            if (remainingPoints > 0)
+            {
+                Gizmos.DrawSphere(waypoints[waypoints.Length - 1].position, 0.1f);
             }
         }
     }

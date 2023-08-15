@@ -2090,7 +2090,7 @@ GameObject:
   - component: {fileID: 1259249785}
   - component: {fileID: 1259249784}
   m_Layer: 0
-  m_Name: Coaster
+  m_Name: DeCasteljauCoaster
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2139,13 +2139,13 @@ MonoBehaviour:
   - {fileID: 184358800}
   - {fileID: 237840507}
   - {fileID: 639712894}
-  resolution: 0.01
+  resolution: 0.005
   cart: {fileID: 1744827653}
   cartOffest: {x: 0, y: 0.9, z: 0}
   cartRotationOffset: {x: 0, y: 0, z: 0}
   speed: 0.2
-  height: 0.3
-  width: 2
+  height: 0.1
+  width: 2.5
 --- !u!33 &1259249784
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3057,7 +3057,7 @@ GameObject:
   - component: {fileID: 2140850051}
   - component: {fileID: 2140850050}
   m_Layer: 0
-  m_Name: Coaster (1)
+  m_Name: BernsteinCoaster
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3130,6 +3130,17 @@ MonoBehaviour:
   - {fileID: 1300830518}
   - {fileID: 1736654358}
   - {fileID: 139160545}
+  - {fileID: 1820552842}
+  - {fileID: 2078069410}
+  - {fileID: 155919660}
+  - {fileID: 1651257072}
+  - {fileID: 422336215}
+  - {fileID: 90552514}
+  - {fileID: 2087679063}
+  - {fileID: 706259242}
+  - {fileID: 184358800}
+  - {fileID: 237840507}
+  - {fileID: 639712894}
   resolution: 0.01
   cart: {fileID: 1744827653}
   cartOffest: {x: 0, y: 0.88, z: 0}

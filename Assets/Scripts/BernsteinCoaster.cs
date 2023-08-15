@@ -24,8 +24,8 @@ public class BernsteinCoaster : MonoBehaviour
 
     private void Start()
     {
-        numberOfCurves = waypoints.Length / 3; // Every 4 points create a single cubic bezier curve
-        if (numberOfCurves > 0 && (waypoints.Length - (3 * numberOfCurves)) != 1)
+        numberOfCurves = (waypoints.Length - 1) / 3; // Consider 1 starting point and 3 additional points for each curve.
+        if ((waypoints.Length - 1) % 3 != 0)
         {
             Debug.LogWarning("The number of waypoints doesn't fit perfectly into full cubic bezier curves. Excess points will be ignored.");
         }
@@ -33,27 +33,33 @@ public class BernsteinCoaster : MonoBehaviour
         meshFilter.mesh = CreateBezierMesh(waypoints, height, width);
     }
 
-    private void Update()
-    {
-        t += speed * Time.deltaTime;
+private void Update()
+{
+    t += speed * Time.deltaTime;
 
-        if (t > numberOfCurves)
-            t -= numberOfCurves;
+    if (t > numberOfCurves)
+        t -= numberOfCurves;
 
-        int curveIndex = Mathf.FloorToInt(t);
-        Vector3 p0 = waypoints[curveIndex * 3].position;
-        Vector3 p1 = waypoints[curveIndex * 3 + 1].position;
-        Vector3 p2 = waypoints[curveIndex * 3 + 2].position;
-        Vector3 p3 = waypoints[Mathf.Min(curveIndex * 3 + 3, waypoints.Length - 1)].position; // Making sure we don't exceed the array
+    int curveIndex = Mathf.FloorToInt(t);
+    Vector3 p0 = waypoints[curveIndex * 3].position;
+    Vector3 p1 = waypoints[curveIndex * 3 + 1].position;
+    Vector3 p2 = waypoints[curveIndex * 3 + 2].position;
+    Vector3 p3 = waypoints[Mathf.Min(curveIndex * 3 + 3, waypoints.Length - 1)].position; // Making sure we don't exceed the array
 
-        float localT = t - curveIndex; // Normalize t to [0, 1] for the current curve
+    float localT = t - curveIndex; // Normalize t to [0, 1] for the current curve
 
-        Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
-        Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
+    // Ensure localT is clamped between 0 and 1 to avoid teleportation due to floating-point inaccuracies
+    localT = Mathf.Clamp01(localT);
 
-        cart.transform.position = point + cart.transform.rotation * cartOffest;
-        cart.transform.rotation = Quaternion.LookRotation(tangent, Vector3.right) * Quaternion.Euler(cartRotationOffset);
-    }
+    Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
+    Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
+    Vector3 binormal = Vector3.Cross(tangent, Vector3.up).normalized; 
+    Vector3 normal = Vector3.Cross(binormal, tangent).normalized;
+
+    cart.transform.position = point + cartOffest;
+    cart.transform.rotation = Quaternion.LookRotation(tangent, normal) * Quaternion.Euler(cartRotationOffset);
+}
+
 
     private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)
     {
@@ -214,7 +220,7 @@ public class BernsteinCoaster : MonoBehaviour
 
         if (waypoints != null)
         {
-            int completeCurves = waypoints.Length / 4;
+            int completeCurves = (waypoints.Length - 1) / 3;
 
             for (int i = 0; i < completeCurves; i++)
             {

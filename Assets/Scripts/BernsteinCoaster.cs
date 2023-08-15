@@ -33,33 +33,60 @@ public class BernsteinCoaster : MonoBehaviour
         meshFilter.mesh = CreateBezierMesh(waypoints, height, width);
     }
 
-private void Update()
-{
-    t += speed * Time.deltaTime;
+    public Transform waypointParent;
 
-    if (t > numberOfCurves)
-        t -= numberOfCurves;
+    private void PopulateWaypointsFromChildren()
+    {
+        if (waypointParent != null)
+        {
+            waypoints = new Transform[waypointParent.childCount];
+            for (int i = 0; i < waypointParent.childCount; i++)
+            {
+                waypoints[i] = waypointParent.GetChild(i);
+            }
+        }
+        else
+        {
+            waypoints = new Transform[0]; // Reset the waypoints array if waypointParent is null
+        }
+    }
 
-    int curveIndex = Mathf.FloorToInt(t);
-    Vector3 p0 = waypoints[curveIndex * 3].position;
-    Vector3 p1 = waypoints[curveIndex * 3 + 1].position;
-    Vector3 p2 = waypoints[curveIndex * 3 + 2].position;
-    Vector3 p3 = waypoints[Mathf.Min(curveIndex * 3 + 3, waypoints.Length - 1)].position; // Making sure we don't exceed the array
+    private void Awake()
+    {
+        PopulateWaypointsFromChildren();
+    }
 
-    float localT = t - curveIndex; // Normalize t to [0, 1] for the current curve
+    private void OnValidate()
+    {
+        PopulateWaypointsFromChildren();
+    }
 
-    // Ensure localT is clamped between 0 and 1 to avoid teleportation due to floating-point inaccuracies
-    localT = Mathf.Clamp01(localT);
+    private void Update()
+    {
+        t += speed * Time.deltaTime;
 
-    Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
-    Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
-    Vector3 binormal = Vector3.Cross(tangent, Vector3.up).normalized; 
-    Vector3 normal = Vector3.Cross(binormal, tangent).normalized;
+        if (t > numberOfCurves)
+            t -= numberOfCurves;
 
-    cart.transform.position = point + cartOffest;
-    cart.transform.rotation = Quaternion.LookRotation(tangent, normal) * Quaternion.Euler(cartRotationOffset);
-}
+        int curveIndex = Mathf.FloorToInt(t);
+        Vector3 p0 = waypoints[curveIndex * 3].position;
+        Vector3 p1 = waypoints[curveIndex * 3 + 1].position;
+        Vector3 p2 = waypoints[curveIndex * 3 + 2].position;
+        Vector3 p3 = waypoints[Mathf.Min(curveIndex * 3 + 3, waypoints.Length - 1)].position; // Making sure we don't exceed the array
 
+        float localT = t - curveIndex; // Normalize t to [0, 1] for the current curve
+
+        // Ensure localT is clamped between 0 and 1 to avoid teleportation due to floating-point inaccuracies
+        localT = Mathf.Clamp01(localT);
+
+        Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
+        Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
+        Vector3 binormal = Vector3.Cross(tangent, Vector3.up).normalized; 
+        Vector3 normal = Vector3.Cross(binormal, tangent).normalized;
+
+        cart.transform.position = point + cartOffest;
+        cart.transform.rotation = Quaternion.LookRotation(tangent, normal) * Quaternion.Euler(cartRotationOffset);
+    }
 
     private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)
     {

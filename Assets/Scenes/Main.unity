@@ -3255,6 +3255,7 @@ MonoBehaviour:
   speed: 0.5
   height: 0.3
   width: 2
+  waypointParent: {fileID: 176007155}
 --- !u!4 &2140850053
 Transform:
   m_ObjectHideFlags: 0

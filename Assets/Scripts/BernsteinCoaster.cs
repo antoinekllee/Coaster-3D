@@ -56,17 +56,28 @@ public class BernsteinCoaster : MonoBehaviour
         meshFilter.mesh = CreateBezierMesh(waypoints, height, width);
     }
 
-
     private void PopulateWaypointsFromChildren()
     {
         if (waypointParent != null)
         {
-            waypoints = new Transform[waypointParent.childCount];
+            List<Transform> activeWaypoints = new List<Transform>();
+            
             for (int i = 0; i < waypointParent.childCount; i++)
-                waypoints[i] = waypointParent.GetChild(i);
+            {
+                Transform child = waypointParent.GetChild(i);
+                
+                if(child.gameObject.activeInHierarchy)
+                {
+                    activeWaypoints.Add(child);
+                }
+            }
+
+            waypoints = activeWaypoints.ToArray();
         }
         else
+        {
             waypoints = new Transform[0]; // Reset the waypoints array if waypointParent is null
+        }
     }
 
     private void Update()
@@ -90,11 +101,9 @@ public class BernsteinCoaster : MonoBehaviour
 
         Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
         Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
-        Vector3 binormal = Vector3.Cross(tangent, Vector3.up).normalized; 
-        Vector3 normal = Vector3.Cross(binormal, tangent).normalized;
 
         cart.transform.position = point + cartOffest;
-        cart.transform.rotation = Quaternion.LookRotation(tangent, normal) * Quaternion.Euler(cartRotationOffset);
+        cart.transform.rotation = Quaternion.LookRotation(tangent) * Quaternion.Euler(cartRotationOffset);
     }
 
     private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)
@@ -252,7 +261,8 @@ public class BernsteinCoaster : MonoBehaviour
     // Visualise with gizmos
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.gray;
+        // Array of colors to cycle through for the curves
+        Color[] curveColors = { Color.red, Color.blue, Color.green, Color.yellow, Color.cyan, Color.magenta };
 
         if (waypoints != null)
         {
@@ -265,6 +275,8 @@ public class BernsteinCoaster : MonoBehaviour
                 Vector3 p2 = waypoints[i * 3 + 2].position;
                 Vector3 p3 = waypoints[i * 3 + 3].position;
 
+                Gizmos.color = curveColors[i % curveColors.Length]; // Change color based on the curve index
+
                 Gizmos.DrawLine(p0, p1);
                 Gizmos.DrawLine(p2, p3);
 
@@ -273,21 +285,6 @@ public class BernsteinCoaster : MonoBehaviour
                     Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
                     Gizmos.DrawSphere(point, 0.1f);
                 }
-            }
-
-            // Draw lines and spheres for the remaining points (if they exist but don't form a complete curve)
-            int remainingPoints = waypoints.Length - (completeCurves * 4);
-            for (int i = 0; i < remainingPoints - 1; i++)
-            {
-                Vector3 pStart = waypoints[completeCurves * 4 + i].position;
-                Vector3 pEnd = waypoints[completeCurves * 4 + i + 1].position;
-                Gizmos.DrawLine(pStart, pEnd);
-                Gizmos.DrawSphere(pStart, 0.1f);
-            }
-
-            if (remainingPoints > 0)
-            {
-                Gizmos.DrawSphere(waypoints[waypoints.Length - 1].position, 0.1f);
             }
         }
     }

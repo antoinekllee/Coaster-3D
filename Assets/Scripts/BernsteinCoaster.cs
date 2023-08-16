@@ -2,38 +2,60 @@ using System.Collections.Generic;
 using UnityEngine;
 using MyBox; 
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 [RequireComponent(typeof(MeshFilter))]
 public class BernsteinCoaster : MonoBehaviour
 {
-    public Transform[] waypoints = null;
     [SerializeField, MinValue(0.005f), MaxValue(0.5f)] private float resolution = 0.01f;
     [Space (8)]
     [SerializeField, MustBeAssigned] private GameObject cart = null; 
-    [SerializeField] private Vector3 cartOffest = new Vector3 (0f, 1f, 0f); 
-    [SerializeField] private Vector3 cartRotationOffset = new Vector3 (0f, 0f, -90f);
-    [SerializeField, PositiveValueOnly] private float speed = 1f;
+    [SerializeField] private Vector3 cartOffest = Vector3.zero;
+    [SerializeField] private Vector3 cartRotationOffset = Vector3.zero;
+    [SerializeField, PositiveValueOnly] private float speed = 0.5f;
     [Space (8)]
     [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 0.2f;
-    [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 2f;
+    [SerializeField, PositiveValueOnly, MaxValue(5f)] float width = 2.5f;
 
+    [SerializeField] private Transform waypointParent;
+    [ReadOnly] public Transform[] waypoints = null;
+    
+    private MeshFilter meshFilter = null;
+    private int numberOfCurves;
     private float t = 0f;
 
-    private MeshFilter meshFilter = null;
+    #if UNITY_EDITOR
+    [InitializeOnLoad]
+    public class HierarchyChangeListener // update the waypoints array when the hierarchy changes
+    {
+        static HierarchyChangeListener()
+        {
+            EditorApplication.hierarchyChanged += OnHierarchyChanged;
+        }
 
-    private int numberOfCurves;
+        private static void OnHierarchyChanged()
+        {
+            BernsteinCoaster[] coasters = FindObjectsOfType<BernsteinCoaster>();
+            foreach (BernsteinCoaster coaster in coasters)
+                coaster.PopulateWaypointsFromChildren();
+        }
+    }
+    #endif
 
     private void Start()
     {
         numberOfCurves = (waypoints.Length - 1) / 3; // Consider 1 starting point and 3 additional points for each curve.
         if ((waypoints.Length - 1) % 3 != 0)
         {
-            Debug.LogWarning("The number of waypoints doesn't fit perfectly into full cubic bezier curves. Excess points will be ignored.");
+            int excessWaypoints = (waypoints.Length - 1) % 3;
+            Debug.LogWarning("There are " + excessWaypoints + " excess points which will be ignored.");
         }
         meshFilter = GetComponent<MeshFilter>();
         meshFilter.mesh = CreateBezierMesh(waypoints, height, width);
     }
 
-    public Transform waypointParent;
 
     private void PopulateWaypointsFromChildren()
     {
@@ -41,28 +63,16 @@ public class BernsteinCoaster : MonoBehaviour
         {
             waypoints = new Transform[waypointParent.childCount];
             for (int i = 0; i < waypointParent.childCount; i++)
-            {
                 waypoints[i] = waypointParent.GetChild(i);
-            }
         }
         else
-        {
             waypoints = new Transform[0]; // Reset the waypoints array if waypointParent is null
-        }
-    }
-
-    private void Awake()
-    {
-        PopulateWaypointsFromChildren();
-    }
-
-    private void OnValidate()
-    {
-        PopulateWaypointsFromChildren();
     }
 
     private void Update()
     {
+        PopulateWaypointsFromChildren();
+        
         t += speed * Time.deltaTime;
 
         if (t > numberOfCurves)
@@ -76,7 +86,6 @@ public class BernsteinCoaster : MonoBehaviour
 
         float localT = t - curveIndex; // Normalize t to [0, 1] for the current curve
 
-        // Ensure localT is clamped between 0 and 1 to avoid teleportation due to floating-point inaccuracies
         localT = Mathf.Clamp01(localT);
 
         Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);

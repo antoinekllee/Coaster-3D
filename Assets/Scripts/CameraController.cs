@@ -20,6 +20,9 @@ public class CameraController : MonoBehaviour
     [SerializeField, ReadOnly] Transform[] waypoints;
     private bool isResetting = false; 
 
+    [SerializeField] private GameObject firstPersonCam = null;
+    private bool firstPersonCamActive = false;
+
     private void Start()
     {
         waypoints = new Transform[waypointsParent.childCount];
@@ -31,6 +34,20 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
+        if (Input.GetKeyDown (KeyCode.Alpha1))
+        {
+            firstPersonCamActive = true; 
+            firstPersonCam.SetActive(true);
+        }
+        else if (Input.GetKeyDown (KeyCode.Alpha2))
+        {
+            firstPersonCamActive = false; 
+            firstPersonCam.SetActive(false);
+        }
+
+        if (firstPersonCamActive)
+            return; 
+
         if (isResetting)
         {
             isPanning = false;

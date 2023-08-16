@@ -1064,6 +1064,7 @@ MonoBehaviour:
   maxZoomDistance: 200
   waypointsParent: {fileID: 176007155}
   waypoints: []
+  firstPersonCam: {fileID: 1267911812}
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -2312,15 +2313,14 @@ GameObject:
   m_Component:
   - component: {fileID: 1267911813}
   - component: {fileID: 1267911816}
-  - component: {fileID: 1267911815}
   - component: {fileID: 1267911814}
   m_Layer: 0
-  m_Name: POV Camera
+  m_Name: First Person Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1267911813
 Transform:
   m_ObjectHideFlags: 0
@@ -2380,14 +2380,6 @@ MonoBehaviour:
     mipBias: 0
     varianceClampScale: 0.9
     contrastAdaptiveSharpening: 0
---- !u!81 &1267911815
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1267911812}
-  m_Enabled: 1
 --- !u!20 &1267911816
 Camera:
   m_ObjectHideFlags: 0

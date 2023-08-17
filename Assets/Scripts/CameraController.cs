@@ -1,6 +1,7 @@
 using UnityEngine;
 using MyBox;
 using DG.Tweening;
+using System.Collections.Generic;
 
 public class CameraController : MonoBehaviour
 {
@@ -25,10 +26,15 @@ public class CameraController : MonoBehaviour
 
     private void Start()
     {
-        waypoints = new Transform[waypointsParent.childCount];
+        List<Transform> activeWaypoints = new List<Transform>();   
         for (int i = 0; i < waypointsParent.childCount; i++)
-            waypoints[i] = waypointsParent.GetChild(i);
-        
+        {
+            Transform child = waypointsParent.GetChild(i);
+            if(child.gameObject.activeInHierarchy)
+                activeWaypoints.Add(child);
+        }
+        waypoints = activeWaypoints.ToArray();
+
         Recenter(waypoints);
     }
 

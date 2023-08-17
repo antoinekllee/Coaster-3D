@@ -12,8 +12,6 @@ public class BernsteinCoaster : MonoBehaviour
     [SerializeField, MinValue(0.005f), MaxValue(0.5f)] private float resolution = 0.01f;
     [Space (8)]
     [SerializeField, MustBeAssigned] private GameObject cart = null; 
-    [SerializeField] private Vector3 cartOffest = Vector3.zero;
-    [SerializeField] private Vector3 cartRotationOffset = Vector3.zero;
     [SerializeField, PositiveValueOnly] private float speed = 0.5f;
     [Space (8)]
     [SerializeField, PositiveValueOnly, MaxValue(5f)] float height = 0.2f;
@@ -80,10 +78,12 @@ public class BernsteinCoaster : MonoBehaviour
         }
     }
 
+    private Vector3 currentUpDirection = Vector3.up;
+
     private void Update()
     {
         PopulateWaypointsFromChildren();
-        
+
         t += speed * Time.deltaTime;
 
         if (t > numberOfCurves)
@@ -101,9 +101,28 @@ public class BernsteinCoaster : MonoBehaviour
 
         Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
         Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
+        (Vector3 cartUpDirection, Vector3 cartNormalDirection) = CalculateCartUpDirection(localT, p0, p1, p2, p3);
 
-        cart.transform.position = point + cartOffest;
-        cart.transform.rotation = Quaternion.LookRotation(tangent) * Quaternion.Euler(cartRotationOffset);
+        cart.transform.position = point + cartNormalDirection * height;
+        cart.transform.rotation = Quaternion.LookRotation(tangent, cartUpDirection); 
+    }
+
+    private (Vector3, Vector3) CalculateCartUpDirection(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+    {
+        Vector3 T = CalculateBezierTangent(t, p0, p1, p2, p3); // Tangent (T)
+
+        float tt = t * t;
+        Vector3 d3 = Vector3.zero;
+        d3 += (12 * tt - 12 * t) * p0; // (12t^2 - 12t) * p0
+        d3 += (-36 * tt + 12 * t) * p1; // (-36t^2 + 12t) * p1
+        d3 += (36 * tt) * p2; // (36t^2) * p2
+        d3 += -12 * tt * p3; // -12t^2 * p3
+
+        Vector3 N = Vector3.Cross(d3, T).normalized; // Normal (N)
+
+        Vector3 B = Vector3.Cross(T, N).normalized; // Binormal (B)
+
+        return (B, N);
     }
 
     private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)
@@ -127,7 +146,7 @@ public class BernsteinCoaster : MonoBehaviour
             for (float t = 0; t <= 1; t += resolution)
             {
                 Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
-                Vector3 tangent = CalculateBezierTangent(t, p0, p1, p2, p3).normalized;
+                Vector3 tangent = CalculateBezierTangent(t, p0, p1, p2, p3);
                 Vector3 normal = Vector3.Cross(tangent, Vector3.right);
 
                 int leftDown = vertices.Count;

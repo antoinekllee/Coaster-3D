@@ -19,6 +19,7 @@ public class BernsteinCoaster : MonoBehaviour
 
     [SerializeField] private Transform waypointParent;
     [ReadOnly] public Transform[] waypoints = null;
+    private Vector3 currentUpDirection = Vector3.up;
     
     private MeshFilter meshFilter = null;
     private int numberOfCurves;
@@ -78,8 +79,6 @@ public class BernsteinCoaster : MonoBehaviour
         }
     }
 
-    private Vector3 currentUpDirection = Vector3.up;
-
     private void Update()
     {
         PopulateWaypointsFromChildren();
@@ -87,7 +86,10 @@ public class BernsteinCoaster : MonoBehaviour
         t += speed * Time.deltaTime;
 
         if (t > numberOfCurves)
+        {
+            currentUpDirection = Vector3.up;
             t -= numberOfCurves;
+        }
 
         int curveIndex = Mathf.FloorToInt(t);
         Vector3 p0 = waypoints[curveIndex * 3].position;
@@ -101,28 +103,20 @@ public class BernsteinCoaster : MonoBehaviour
 
         Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
         Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
-        (Vector3 cartUpDirection, Vector3 cartNormalDirection) = CalculateCartUpDirection(localT, p0, p1, p2, p3);
+        currentUpDirection = CalculateCartUpDirection(localT, p0, p1, p2, p3, currentUpDirection);
 
-        cart.transform.position = point; 
-        cart.transform.rotation = Quaternion.LookRotation(tangent, cartUpDirection); 
+        cart.transform.position = point;
+        cart.transform.rotation = Quaternion.LookRotation(tangent, currentUpDirection);
     }
 
-    private (Vector3, Vector3) CalculateCartUpDirection(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3)
+    private Vector3 CalculateCartUpDirection(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 prevUpDirection)
     {
         Vector3 T = CalculateBezierTangent(t, p0, p1, p2, p3); // Tangent (T)
 
-        float tt = t * t;
-        Vector3 d3 = Vector3.zero;
-        d3 += (12 * tt - 12 * t) * p0; // (12t^2 - 12t) * p0
-        d3 += (-36 * tt + 12 * t) * p1; // (-36t^2 + 12t) * p1
-        d3 += (36 * tt) * p2; // (36t^2) * p2
-        d3 += -12 * tt * p3; // -12t^2 * p3
+        Vector3 B = Vector3.Cross(prevUpDirection, T).normalized; // Binormal (B) using previous up direction
+        Vector3 newUpDirection = Vector3.Cross(T, B).normalized; // Recalculate up direction to be orthogonal to the tangent
 
-        Vector3 N = Vector3.Cross(d3, T).normalized; // Normal (N)
-
-        Vector3 B = Vector3.Cross(T, N).normalized; // Binormal (B)
-
-        return (B, N);
+        return newUpDirection;
     }
 
     private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)

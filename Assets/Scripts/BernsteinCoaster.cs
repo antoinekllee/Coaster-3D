@@ -103,7 +103,7 @@ public class BernsteinCoaster : MonoBehaviour
         Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
         (Vector3 cartUpDirection, Vector3 cartNormalDirection) = CalculateCartUpDirection(localT, p0, p1, p2, p3);
 
-        cart.transform.position = point + cartNormalDirection * height;
+        cart.transform.position = point; 
         cart.transform.rotation = Quaternion.LookRotation(tangent, cartUpDirection); 
     }
 

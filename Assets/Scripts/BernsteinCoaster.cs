@@ -296,7 +296,7 @@ public class BernsteinCoaster : MonoBehaviour
                 for (float t = 0; t <= 1; t += resolution)
                 {
                     Vector3 point = CalculateBezierPoint(t, p0, p1, p2, p3);
-                    Gizmos.DrawSphere(point, 0.1f);
+                    Gizmos.DrawSphere(point, 0.15f);
                 }
             }
         }

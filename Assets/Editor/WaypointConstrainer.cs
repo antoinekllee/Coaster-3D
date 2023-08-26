@@ -42,6 +42,4 @@ public class WaypointEditor : Editor
             lastPosition = waypoint.transform.position;
         }
     }
-
-
 }

@@ -19,7 +19,6 @@ public class BernsteinCoaster : MonoBehaviour
 
     [SerializeField] private Transform waypointParent;
     [ReadOnly] public Transform[] waypoints = null;
-    private Vector3 currentUpDirection = Vector3.up;
     
     private MeshFilter meshFilter = null;
     private int numberOfCurves;
@@ -87,7 +86,6 @@ public class BernsteinCoaster : MonoBehaviour
 
         if (t > numberOfCurves)
         {
-            currentUpDirection = Vector3.up;
             t -= numberOfCurves;
         }
 
@@ -97,26 +95,16 @@ public class BernsteinCoaster : MonoBehaviour
         Vector3 p2 = waypoints[curveIndex * 3 + 2].position;
         Vector3 p3 = waypoints[Mathf.Min(curveIndex * 3 + 3, waypoints.Length - 1)].position; // Making sure we don't exceed the array
 
-        float localT = t - curveIndex; // Normalize t to [0, 1] for the current curve
+        float localT = t - curveIndex; // Local t value for the current curve
 
         localT = Mathf.Clamp01(localT);
 
         Vector3 point = CalculateBezierPoint(localT, p0, p1, p2, p3);
         Vector3 tangent = CalculateBezierTangent(localT, p0, p1, p2, p3);
-        currentUpDirection = CalculateCartUpDirection(localT, p0, p1, p2, p3, currentUpDirection);
+        Vector3 normal = Vector3.Cross(tangent, Vector3.right);
 
         cart.transform.position = point;
-        cart.transform.rotation = Quaternion.LookRotation(tangent, currentUpDirection);
-    }
-
-    private Vector3 CalculateCartUpDirection(float t, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector3 prevUpDirection)
-    {
-        Vector3 T = CalculateBezierTangent(t, p0, p1, p2, p3); // Tangent (T)
-
-        Vector3 B = Vector3.Cross(prevUpDirection, T).normalized; // Binormal (B) using previous up direction
-        Vector3 newUpDirection = Vector3.Cross(T, B).normalized; // Recalculate up direction to be orthogonal to the tangent
-
-        return newUpDirection;
+        cart.transform.rotation = Quaternion.LookRotation(tangent, normal);
     }
 
     private Mesh CreateBezierMesh(Transform[] controlPoints, float width, float height)
